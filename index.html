@@ -97,6 +97,12 @@
             -webkit-appearance: none; 
             margin: 0; 
         }
+
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
     </style>
 </head>
 <body class="relative min-h-screen antialiased selection:bg-brand-accent selection:text-white">
@@ -398,71 +404,99 @@
         </footer>
     </main>
 
-    <!-- Custom Animation Keyframes (added via config but shimmer needs direct definition) -->
-    <style>
-        @keyframes shimmer {
-            100% {
-                transform: translateX(100%);
-            }
-        }
-    </style>
-
-    <!-- Interactions Script -->
+    <!-- Interactions Script (single, consolidated) -->
     <script>
-        // Set Current Year
+        // ضع هنا الرابط الخاص بـ Web App الذي نسخته من Google Apps Script
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydg1By637Jarn5RtB7kXqgK5V9yEYU1NQVFy9YJ2VUjqyrYj3Sf7c5NW-ZZ-UDLWZO/exec";
+
+        // ضبط السنة الحالية في التذييل
         document.getElementById('year').textContent = new Date().getFullYear();
 
-        // Form Submit Simulation
         const form = document.getElementById('referralForm');
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
         const spinner = document.getElementById('spinner');
 
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
 
-            // Check if form is valid before simulating submission
-            if(!form.checkValidity()) {
+            // التحقق من صحة المدخلات
+            if (!form.checkValidity()) {
                 form.reportValidity();
                 return;
             }
 
-            // UI Loading State
+            // تفعيل حالة التحميل (Loading State) في الواجهة
             submitBtn.disabled = true;
             submitBtn.classList.add('cursor-not-allowed', 'opacity-90');
             submitBtn.classList.remove('hover:-translate-y-1', 'hover:shadow-[0_0_20px_rgba(242,101,34,0.4)]');
             btnText.classList.add('hidden');
             spinner.classList.remove('hidden');
 
-            // Simulate API Call delay (2 seconds)
-            setTimeout(() => {
-                // Success State UI
-                submitBtn.classList.remove('bg-brand-accent', 'hover:bg-[#d9561a]');
-                submitBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
-                spinner.classList.add('hidden');
-                btnText.innerHTML = `
-                    تم إرسال الترشيح بنجاح!
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                `;
-                btnText.classList.remove('hidden');
+            // تجميع البيانات من الحقول
+            const selectedGift = document.querySelector('input[name="gift"]:checked')?.value;
+            const formData = {
+                fullName: document.getElementById('fullName').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                field: document.getElementById('field').value,
+                contactTime: document.getElementById('contactTime').value,
+                experience: document.getElementById('experience').value,
+                gift: selectedGift,
+                notes: document.getElementById('notes').value
+            };
 
-                // Reset Form after 3 seconds
-                setTimeout(() => {
-                    form.reset();
-                    // Revert button to original state
-                    submitBtn.classList.add('bg-brand-accent', 'hover:bg-[#d9561a]', 'hover:-translate-y-1', 'hover:shadow-[0_0_20px_rgba(242,101,34,0.4)]');
-                    submitBtn.classList.remove('bg-emerald-500', 'hover:bg-emerald-600', 'cursor-not-allowed', 'opacity-90');
-                    submitBtn.disabled = false;
-                    
-                    btnText.innerHTML = `
-                        إرسال الترشيح
-                        <svg class="w-5 h-5 rtl:rotate-180 transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    `;
-                }, 3000);
-            }, 2000);
+            // إرسال البيانات إلى Google Sheets عبر Fetch API
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // تم استخدام no-cors لتجنب مشاكل توجيه النطاقات في سكريبت جوجل
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+                .then(() => {
+                    // بما أن وضع 'no-cors' لا يرجع استجابة يمكن قراءتها ولكن العملية تنجح، نعتبر الاستجابة ناجحة فوراً
+                    showSuccessState();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('حدث خطأ أثناء إرسال البيانات، يرجى المحاولة مرة أخرى.');
+                    resetButtonState();
+                });
         });
 
-        // Add specific interaction for radio cards to ensure focus styles
+        // دالة إظهار حالة النجاح
+        function showSuccessState() {
+            submitBtn.classList.remove('bg-brand-accent', 'hover:bg-[#d9561a]');
+            submitBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+            spinner.classList.add('hidden');
+            btnText.innerHTML = `
+                تم إرسال الترشيح وحفظه بنجاح!
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            `;
+            btnText.classList.remove('hidden');
+
+            // إعادة تعيين النموذج بعد 3 ثوانٍ للعودة للحالة الطبيعية
+            setTimeout(() => {
+                form.reset();
+                resetButtonState();
+            }, 3000);
+        }
+
+        // دالة إعادة زر الإرسال لوضعه الطبيعي
+        function resetButtonState() {
+            submitBtn.classList.add('bg-brand-accent', 'hover:bg-[#d9561a]', 'hover:-translate-y-1', 'hover:shadow-[0_0_20px_rgba(242,101,34,0.4)]');
+            submitBtn.classList.remove('bg-emerald-500', 'hover:bg-emerald-600', 'cursor-not-allowed', 'opacity-90');
+            submitBtn.disabled = false;
+
+            btnText.innerHTML = `
+                إرسال الترشيح
+                <svg class="w-5 h-5 rtl:rotate-180 transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            `;
+        }
+
+        // إضافة تأثيرات الـ Focus لبطاقات المكافآت راديو
         const radioInputs = document.querySelectorAll('input[type="radio"]');
         radioInputs.forEach(input => {
             input.addEventListener('focus', () => {
