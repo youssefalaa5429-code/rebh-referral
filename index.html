@@ -97,12 +97,6 @@
             -webkit-appearance: none; 
             margin: 0; 
         }
-
-        @keyframes shimmer {
-            100% {
-                transform: translateX(100%);
-            }
-        }
     </style>
 </head>
 <body class="relative min-h-screen antialiased selection:bg-brand-accent selection:text-white">
@@ -404,7 +398,16 @@
         </footer>
     </main>
 
-    <!-- Interactions Script (single, consolidated) -->
+    <!-- Custom Animation Keyframes (added via config but shimmer needs direct definition) -->
+    <style>
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+    </style>
+
+    <!-- Interactions Script -->
     <script>
         // ضع هنا الرابط الخاص بـ Web App الذي نسخته من Google Apps Script
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydg1By637Jarn5RtB7kXqgK5V9yEYU1NQVFy9YJ2VUjqyrYj3Sf7c5NW-ZZ-UDLWZO/exec";
@@ -417,11 +420,11 @@
         const btnText = document.getElementById('btnText');
         const spinner = document.getElementById('spinner');
 
-        form.addEventListener('submit', function (e) {
+        form.addEventListener('submit', function(e) {
             e.preventDefault();
 
             // التحقق من صحة المدخلات
-            if (!form.checkValidity()) {
+            if(!form.checkValidity()) {
                 form.reportValidity();
                 return;
             }
@@ -455,15 +458,15 @@
                 },
                 body: JSON.stringify(formData)
             })
-                .then(() => {
-                    // بما أن وضع 'no-cors' لا يرجع استجابة يمكن قراءتها ولكن العملية تنجح، نعتبر الاستجابة ناجحة فوراً
-                    showSuccessState();
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('حدث خطأ أثناء إرسال البيانات، يرجى المحاولة مرة أخرى.');
-                    resetButtonState();
-                });
+            .then(() => {
+                // بما أن وضع 'no-cors' لا يرجع استجابة يمكن قراءتها ولكن العملية تنجح، نعتبر الاستجابة ناجحة فوراً
+                showSuccessState();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('حدث خطأ أثناء إرسال البيانات، يرجى المحاولة مرة أخرى.');
+                resetButtonState();
+            });
         });
 
         // دالة إظهار حالة النجاح
@@ -489,7 +492,7 @@
             submitBtn.classList.add('bg-brand-accent', 'hover:bg-[#d9561a]', 'hover:-translate-y-1', 'hover:shadow-[0_0_20px_rgba(242,101,34,0.4)]');
             submitBtn.classList.remove('bg-emerald-500', 'hover:bg-emerald-600', 'cursor-not-allowed', 'opacity-90');
             submitBtn.disabled = false;
-
+            
             btnText.innerHTML = `
                 إرسال الترشيح
                 <svg class="w-5 h-5 rtl:rotate-180 transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
